@@ -7,14 +7,15 @@ import 'package:alerta_acv/features/history/pages/history_page.dart';
 import 'package:alerta_acv/features/contacts/pages/contacts_page.dart';
 import 'package:alerta_acv/features/settings/pages/settings_page.dart';
 import 'package:alerta_acv/features/help/pages/help_page.dart';
-import 'package:alerta_acv/features/fast/pages/home_page.dart';
+//import 'package:alerta_acv/features/fast/pages/home_page.dart';
+import 'package:alerta_acv/features/consent/pages/consent_gate_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomePage(),
+      builder: (context, state) => const ConsentGatePage(),
     ),
     GoRoute(
       path: '/fast/face',

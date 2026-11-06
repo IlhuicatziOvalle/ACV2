@@ -47,9 +47,9 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
       _isLoading = true;
     });
 
-    // Llamar directamente al servicio nativo (abre la cámara)
     try {
-      final dropDetected = await _fastService.runArms(FastConstants.armsSeconds);
+      final dropDetected =
+      await _fastService.runArms(FastConstants.armsSeconds);
       if (mounted) {
         setState(() {
           _dropDetected = dropDetected;
@@ -68,10 +68,21 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
     }
   }
 
+  /// Reinicia el estado y vuelve a lanzar el análisis desde cero.
+  void _repeatTest() {
+    TtsService.instance.stop();
+    setState(() {
+      _dropDetected = null;
+      _isRunning = false;
+      _isLoading = false;
+    });
+    _startTest();
+  }
+
   void _proceedToNext() {
     final faceLevel = widget.faceLevel ?? FaceLevel.sin;
     final dropDetected = _dropDetected ?? false;
-    
+
     context.push('/fast/speech', extra: {
       'faceLevel': faceLevel,
       'dropDetected': dropDetected,
@@ -142,15 +153,32 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
       );
     }
 
+    // Cuando hay resultado se muestran dos botones
     final riskLevel = _armRiskLevel!;
-    return ElevatedButton(
-      onPressed: _proceedToNext,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: RiskStyles.color(riskLevel),
-        foregroundColor: Colors.white,
-        padding: buttonPadding,
-      ),
-      child: const Text('Continuar'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed: _proceedToNext,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: RiskStyles.color(riskLevel),
+            foregroundColor: Colors.white,
+            padding: buttonPadding,
+          ),
+          child: const Text('Continuar'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _repeatTest,
+          icon: const Icon(Icons.replay),
+          label: const Text('Repetir'),
+          style: OutlinedButton.styleFrom(
+            padding: buttonPadding,
+            side: const BorderSide(color: Color(0xFF6CB9B7)),
+            foregroundColor: const Color(0xFF6CB9B7),
+          ),
+        ),
+      ],
     );
   }
 

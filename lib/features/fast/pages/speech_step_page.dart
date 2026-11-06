@@ -86,7 +86,7 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
 
     try {
       final analysis = await recordingFuture;
-      
+
       if (mounted) {
         setState(() {
           _result = analysis.level;
@@ -110,6 +110,21 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
         });
       }
     }
+  }
+
+  /// Reinicia el estado y vuelve a lanzar el análisis desde cero.
+  void _repeatTest() {
+    _timer?.cancel();
+    TtsService.instance.stop();
+    setState(() {
+      _result = null;
+      _transcript = null;
+      _similarity = null;
+      _remainingSeconds = FastConstants.speechSeconds;
+      _isRecording = false;
+      _isLoading = false;
+    });
+    _startRecording();
   }
 
   void _proceedToDecision() {
@@ -157,14 +172,15 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
           const SizedBox(height: 12),
           Text(
             'Resultado: ${_result!.label} (${RiskStyles.badge(_speechRiskLevel!)})',
-            style: RiskStyles.highlighted(level: _speechRiskLevel!, fontSize: 20),
+            style:
+            RiskStyles.highlighted(level: _speechRiskLevel!, fontSize: 20),
             textAlign: TextAlign.center,
           ),
           if ((_transcript?.isNotEmpty ?? false) || _similarity != null) ...[
             const SizedBox(height: 12),
             if (_transcript != null && _transcript!.isNotEmpty)
               Text(
-                'Texto detectado: "${_transcript!}"',
+                'Texto detectado: "$_transcript"',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16),
               ),
@@ -225,15 +241,32 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
       );
     }
 
+    // Cuando hay resultado se muestran dos botones
     final riskLevel = _speechRiskLevel!;
-    return ElevatedButton(
-      onPressed: _proceedToDecision,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: RiskStyles.color(riskLevel),
-        foregroundColor: Colors.white,
-        padding: buttonPadding,
-      ),
-      child: const Text('Continuar'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed: _proceedToDecision,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: RiskStyles.color(riskLevel),
+            foregroundColor: Colors.white,
+            padding: buttonPadding,
+          ),
+          child: const Text('Continuar'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _repeatTest,
+          icon: const Icon(Icons.replay),
+          label: const Text('Repetir'),
+          style: OutlinedButton.styleFrom(
+            padding: buttonPadding,
+            side: const BorderSide(color: Color(0xFF6CB9B7)),
+            foregroundColor: const Color(0xFF6CB9B7),
+          ),
+        ),
+      ],
     );
   }
 

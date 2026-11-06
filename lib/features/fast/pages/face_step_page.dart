@@ -53,7 +53,7 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
 
     final maxMillis = FastConstants.faceSeconds * 1000;
     final faceFuture = _fastService.runFace(maxMillis);
-    
+
     final completer = Completer<void>();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
@@ -71,10 +71,10 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
     try {
       // Esperamos a que termine el análisis nativo
       final result = await faceFuture;
-      
+
       // Aseguramos que el timer visual también haya terminado
       await completer.future;
-      
+
       if (mounted) {
         setState(() {
           _result = result;
@@ -123,9 +123,22 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
     }
   }
 
+  /// Reinicia el estado y vuelve a lanzar el análisis desde cero.
+  void _repeatTest() {
+    _timer?.cancel();
+    TtsService.instance.stop();
+    setState(() {
+      _result = null;
+      _remainingSeconds = FastConstants.faceSeconds;
+      _isRunning = false;
+      _isLoading = false;
+    });
+    _startTimer();
+  }
+
   void _proceedToNext() {
     final faceLevel = _result ?? FaceLevel.sin;
-    
+
     context.push('/fast/arms', extra: {
       'faceLevel': faceLevel,
     });
@@ -194,15 +207,32 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
       );
     }
 
+    // Cuando hay resultado se muestran dos botones
     final riskLevel = _faceRiskLevel!;
-    return ElevatedButton(
-      onPressed: _proceedToNext,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: RiskStyles.color(riskLevel),
-        foregroundColor: Colors.white,
-        padding: buttonPadding,
-      ),
-      child: const Text('Continuar'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed: _proceedToNext,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: RiskStyles.color(riskLevel),
+            foregroundColor: Colors.white,
+            padding: buttonPadding,
+          ),
+          child: const Text('Continuar'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _repeatTest,
+          icon: const Icon(Icons.replay),
+          label: const Text('Repetir'),
+          style: OutlinedButton.styleFrom(
+            padding: buttonPadding,
+            side: const BorderSide(color: Color(0xFF6CB9B7)),
+            foregroundColor: const Color(0xFF6CB9B7),
+          ),
+        ),
+      ],
     );
   }
 
