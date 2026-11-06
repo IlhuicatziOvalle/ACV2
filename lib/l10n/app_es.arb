@@ -1,0 +1,12 @@
+{
+  "@@locale": "es",
+  "appTitle": "Alerta ACV",
+  "@appTitle": {
+    "description": "Título de la aplicación"
+  },
+  "disclaimer": "Esta app no proporciona diagnóstico médico. Ante cualquier duda, llama al 911.",
+  "@disclaimer": {
+    "description": "Disclaimer médico"
+  }
+}
+
