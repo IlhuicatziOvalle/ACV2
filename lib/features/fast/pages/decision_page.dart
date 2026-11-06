@@ -136,11 +136,12 @@ class _DecisionPageState extends State<DecisionPage> {
     }
 
     // 2. Enviar SMS a contactos de emergencia solo si el toggle está activado
+    if (!mounted) return;
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Consumer(
-        builder: (context, ref, _) {
+      builder: (_) => Consumer(
+        builder: (_, ref, _) {
           final autoSms = ref.watch(autoSmsProvider);
           if (autoSms) {
             () async {
@@ -430,4 +431,3 @@ class _DecisionPageState extends State<DecisionPage> {
     );
   }
 }
-

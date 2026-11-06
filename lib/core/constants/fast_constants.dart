@@ -3,7 +3,7 @@ class FastConstants {
   // Duraciones en segundos
   static const int faceSeconds = 5;
   static const int armsSeconds = 10;
-  static const int speechSeconds = 4;
+  static const int speechSeconds = 10;
 
   // Umbrales de habla (similaridad 0-1)
   static const double speechNoDifficulty = 0.80;

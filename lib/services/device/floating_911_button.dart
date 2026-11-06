@@ -43,11 +43,12 @@ class Floating911Button extends StatelessWidget {
     }
 
     // 2. Enviar SMS a contactos de emergencia solo si el toggle está activado
+    if (!context.mounted) return;
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Consumer(
-        builder: (context, ref, _) {
+      builder: (_) => Consumer(
+        builder: (_, ref, _) {
           final autoSms = ref.watch(autoSmsProvider);
           if (autoSms) {
             () async {
@@ -95,4 +96,3 @@ class Floating911Button extends StatelessWidget {
     );
   }
 }
-

@@ -3,7 +3,6 @@ import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WidgetService {
-  static const String _appGroupId = 'group.alerta_acv'; // Not used on Android but good practice
   static const String _androidWidgetName = 'ACVWidgetProvider';
 
   /// Updates the widget with title and message

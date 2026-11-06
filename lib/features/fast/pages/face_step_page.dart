@@ -53,7 +53,7 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
 
     final maxMillis = FastConstants.faceSeconds * 1000;
     final faceFuture = _fastService.runFace(maxMillis);
-
+    
     final completer = Completer<void>();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
@@ -71,10 +71,10 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
     try {
       // Esperamos a que termine el análisis nativo
       final result = await faceFuture;
-
+      
       // Aseguramos que el timer visual también haya terminado
       await completer.future;
-
+      
       if (mounted) {
         setState(() {
           _result = result;
@@ -123,22 +123,9 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
     }
   }
 
-  /// Reinicia el estado y vuelve a lanzar el análisis desde cero.
-  void _repeatTest() {
-    _timer?.cancel();
-    TtsService.instance.stop();
-    setState(() {
-      _result = null;
-      _remainingSeconds = FastConstants.faceSeconds;
-      _isRunning = false;
-      _isLoading = false;
-    });
-    _startTimer();
-  }
-
   void _proceedToNext() {
     final faceLevel = _result ?? FaceLevel.sin;
-
+    
     context.push('/fast/arms', extra: {
       'faceLevel': faceLevel,
     });
@@ -195,87 +182,100 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
+/////////-----------------BOTON INICIAR PRUEBA--------------------/////////////
     if (_result == null) {
       return ElevatedButton(
         onPressed: _startTimer,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6CB9B7),
+          backgroundColor: const Color.fromARGB(255, 25, 118, 210),
           foregroundColor: Colors.white,
           padding: buttonPadding,
         ),
-        child: const Text('Iniciar'),
+        child: const Text('Iniciar',
+        style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ))
       );
     }
+    
 
-    // Cuando hay resultado se muestran dos botones
     final riskLevel = _faceRiskLevel!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ElevatedButton(
-          onPressed: _proceedToNext,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: RiskStyles.color(riskLevel),
-            foregroundColor: Colors.white,
-            padding: buttonPadding,
-          ),
-          child: const Text('Continuar'),
-        ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _repeatTest,
-          icon: const Icon(Icons.replay),
-          label: const Text('Repetir'),
-          style: OutlinedButton.styleFrom(
-            padding: buttonPadding,
-            side: const BorderSide(color: Color(0xFF6CB9B7)),
-            foregroundColor: const Color(0xFF6CB9B7),
-          ),
-        ),
-      ],
+    return ElevatedButton(
+      onPressed: _proceedToNext,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: RiskStyles.color(riskLevel),
+        foregroundColor: Colors.white,
+        padding: buttonPadding,
+      ),
+      child: const Text('Continuar'),
     );
   }
 
+////////////////////////////////////////////////////////////////////////////
+/////////-----------------PESTAÑA PRUEBA 1--------------------/////////////
+//////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('FAST - Cara'),
+      backgroundColor: const Color.fromARGB(255, 243, 247, 250), //color de fondo de la pestaña
+      appBar: AppBar( //barra de arriba
+        backgroundColor: const Color.fromARGB(255, 243, 247, 250),//color de fondo de la barra
+        // Reemplazamos la flecha automática por una personalizada
+        leading: Center(
+          child: Container(
+          // Ajustamos el tamaño del círculo blanco
+            width: 80,
+            height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white, // Fondo blanco para que resalte
+                shape: BoxShape.circle, // Forma circular
+              ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.arrow_back, color: Colors.black, size: 40),
+              onPressed: () {
+                Navigator.pop(context); // Acción para volver a la pantalla anterior
+              },
+            ),
+          ),
+        ),
+        title: const Text('Paso 1: Cara',
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ), //titulo de arriba de la pantalla
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(15.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              const Text(
-                'Paso 1: Cara',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
+             const SizedBox(height: 15),
               Image.asset(
-                'assets/images/fast_sintomas/face_drooping.png',
-                height: 180,
+                'assets/images/fast_sintomas/face_droping.png', //la imagen en cuestion del ejemplo
+                height: 360,
+               
                 fit: BoxFit.contain,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 15),
+              // Mostrar instrucciones solamente antes de obtener el resultado
+              if (_result == null) //con esto se evita que aparezcan las instrucciones cambiando el estado
               const Text(
-                'Instrucciones:',
+                'Instrucciones:', //Titulo para las instrucciones
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
+              // Mostrar instrucciones solamente antes de obtener el resultado
+              if (_result == null) //con esto se evita que aparezcan las instrucciones cambiando el estado
               const Text(
-                'Coloca a la persona en cuadro y pídele que sonría por 5 segundos.',
-                style: TextStyle(fontSize: 16),
+                'Coloca a la persona en cuadro y pídele que sonría mostrando los dientes por 5 segundos', //Las instrucciones en si
+                style: TextStyle(fontSize: 20),
               ),
               const SizedBox(height: 16),
               _buildActionPanel(),
@@ -285,7 +285,10 @@ class _FaceStepPageState extends ConsumerState<FaceStepPage> {
         ),
       ),
       floatingActionButton: const Floating911Button(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, //boton de iniciar?
     );
   }
+////////////////////////////////////////////////////////////////////////////
+/////////-----------------PESTAÑA PRUEBA 1--------------------/////////////
+//////////////////////////////////////////////////////////////////////////
 }

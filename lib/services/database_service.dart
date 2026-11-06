@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/emergency_contact.dart';
 import '../models/test_result.dart';
-import '../models/app_consent.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -22,7 +21,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 2,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -37,18 +36,13 @@ class DatabaseService {
         createdAt TEXT NOT NULL
       )
     ''');
-
+    
     await _createTestResultsTable(db);
-    await _createAppConsentsTable(db);
   }
 
-  Future<void> _onUpgrade(
-      Database db, int oldVersion, int newVersion,) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createTestResultsTable(db);
-    }
-    if (oldVersion < 3) {
-      await _createAppConsentsTable(db);
     }
   }
 
@@ -89,7 +83,7 @@ class DatabaseService {
       whereArgs: [id],
       limit: 1,
     );
-
+    
     if (result.isEmpty) return null;
     return EmergencyContact.fromMap(result.first);
   }
@@ -141,58 +135,5 @@ class DatabaseService {
   Future<void> close() async {
     final db = await database;
     await db.close();
-  }
-
-  Future<void> _createAppConsentsTable(Database db) async {
-    await db.execute('''
-    CREATE TABLE app_consents (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      informedConsentAccepted INTEGER NOT NULL,
-      privacyAccepted INTEGER NOT NULL,
-      acceptedAt TEXT NOT NULL,
-      consentVersion TEXT NOT NULL,
-      appName TEXT NOT NULL,
-      appVersion TEXT NOT NULL
-    )
-  ''');
-  }
-
-  Future<int> saveConsent(AppConsent consent) async {
-    final db = await database;
-
-    return await db.insert(
-      'app_consents',
-      consent.toMap(),
-    );
-  }
-
-  Future<AppConsent?> getLatestConsent() async {
-    final db = await database;
-
-    final result = await db.query(
-      'app_consents',
-      orderBy: 'acceptedAt DESC',
-      limit: 1,
-    );
-
-    if (result.isEmpty) {
-      return null;
-    }
-
-    return AppConsent.fromMap(result.first);
-  }
-
-  Future<bool> hasValidConsent(
-      String requiredVersion,
-      ) async {
-    final consent = await getLatestConsent();
-
-    if (consent == null) {
-      return false;
-    }
-
-    return consent.informedConsentAccepted &&
-        consent.privacyAccepted &&
-        consent.consentVersion == requiredVersion;
   }
 }

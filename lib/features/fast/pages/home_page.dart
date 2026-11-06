@@ -4,6 +4,13 @@ import 'package:alerta_acv/services/device/floating_911_button.dart';
 
 import 'package:alerta_acv/services/device/widget_service.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alerta_acv/core/di/app_providers.dart';
+import 'package:alerta_acv/services/database_service.dart';
+import 'package:alerta_acv/services/fast/fast_service.dart';
+import 'package:alerta_acv/services/phone_utils.dart';
+import 'package:alerta_acv/services/sms_service.dart';
+import 'package:alerta_acv/widgets/countdown_dialog.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -32,29 +39,34 @@ class HomePage extends StatelessWidget {
                       const _PartnerLogos(),
                       const SizedBox(height: 24),
                       const Text(
-                        'Alerta ACV',
+                        'ALERTA ACV',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 54,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
+                      const _WarningBanner(),
+                      const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () => context.push('/fast/face'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: Color(0xFF1976D2),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           minimumSize: const Size(double.infinity, 56),
                         ),
                         child: const Text(
-                          'Iniciar prueba FAST',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          'Iniciar Prueba',
+                          style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const _WarningBanner(),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 80),
+                        child: _HomeEmergencyButton(),
+                      ),
                       const SizedBox(height: 48),
                     ],
                   ),
@@ -65,8 +77,6 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: const Floating911Button(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
@@ -141,18 +151,19 @@ class _WarningBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: color.secondaryContainer.withValues(alpha: 0.25),
+        // color: color.secondaryContainer.withValues(alpha: 0.25),
+        color: const Color(0xFF474E53),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.secondary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: const [
-          Icon(Icons.info_outline, size: 18),
+          Icon(Icons.info_outline, size: 40, color: Color(0xFF1976D2)),
           SizedBox(width: 8),
           Expanded(
             child: Text(
               'Esta app no reemplaza una evaluación médica. En caso de duda, llama al 911.',
-              style: TextStyle(fontSize: 13, height: 1.3),
+              style: TextStyle(fontSize: 20, height: 1.3, color: Colors.white),
             ),
           ),
         ],
@@ -167,9 +178,9 @@ class _UtilityButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.bottomLeft,
+      alignment: Alignment.bottomRight,
       child: Padding(
-        padding: const EdgeInsets.only(left: 24, bottom: 24),
+        padding: const EdgeInsets.only(right: 24, bottom: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -207,11 +218,103 @@ class _MiniFab extends StatelessWidget {
     return FloatingActionButton.small(
       heroTag: tooltip,
       tooltip: tooltip,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      foregroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Color(0xFF393E42),
+      foregroundColor: Colors.white,
       onPressed: onTap,
       child: Icon(icon),
     );
   }
 }
 
+class _HomeEmergencyButton extends ConsumerWidget {
+  const _HomeEmergencyButton();
+
+  Future<void> _call911(BuildContext context, WidgetRef ref) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CountdownDialog(
+        seconds: 10,
+        onComplete: () => _executeEmergencyProtocol(context, ref),
+      ),
+    );
+  }
+
+  Future<void> _executeEmergencyProtocol(BuildContext context, WidgetRef ref) async {
+    // 1. Llamar al 911
+    try {
+      final fastService = FastService();
+      final success = await fastService.placeCall911();
+
+      if (!success && context.mounted) {
+        await PhoneUtils.launchDialer(context, '911');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al llamar al 911: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    // 2. Enviar SMS a contactos de emergencia
+    // ¡Aquí está la mejora! Usamos 'ref' directamente porque ya lo tenemos disponible.
+    final autoSms = ref.read(autoSmsProvider);
+
+    if (autoSms) {
+      try {
+        final contacts = await DatabaseService.instance.getAllContacts();
+        if (contacts.isNotEmpty) {
+          final phoneNumbers = contacts.map((c) => c.phoneNumber).toList();
+          final errors = await SmsService.sendEmergencySmsToMultiple(phoneNumbers);
+
+          if (context.mounted && errors.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('SMS de emergencia enviado a tus contactos'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Error enviando SMS: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ElevatedButton(
+      // Pasamos 'ref' a la función para que pueda usarlo después
+      onPressed: () => _call911(context, ref),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, 72),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(40),
+        ),
+        elevation: 6,
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.phone, size: 40),
+          SizedBox(width: 12),
+          Text(
+            '911',
+            style: TextStyle(
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

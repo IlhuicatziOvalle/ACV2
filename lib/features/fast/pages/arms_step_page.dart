@@ -47,9 +47,9 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
       _isLoading = true;
     });
 
+    // Llamar directamente al servicio nativo (abre la cámara)
     try {
-      final dropDetected =
-      await _fastService.runArms(FastConstants.armsSeconds);
+      final dropDetected = await _fastService.runArms(FastConstants.armsSeconds);
       if (mounted) {
         setState(() {
           _dropDetected = dropDetected;
@@ -68,21 +68,10 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
     }
   }
 
-  /// Reinicia el estado y vuelve a lanzar el análisis desde cero.
-  void _repeatTest() {
-    TtsService.instance.stop();
-    setState(() {
-      _dropDetected = null;
-      _isRunning = false;
-      _isLoading = false;
-    });
-    _startTest();
-  }
-
   void _proceedToNext() {
     final faceLevel = widget.faceLevel ?? FaceLevel.sin;
     final dropDetected = _dropDetected ?? false;
-
+    
     context.push('/fast/speech', extra: {
       'faceLevel': faceLevel,
       'dropDetected': dropDetected,
@@ -140,12 +129,12 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
         child: const Text('Analizando...'),
       );
     }
-
+/////////-----------------BOTON INICIAR PRUEBA--------------------/////////////
     if (_dropDetected == null) {
       return ElevatedButton(
         onPressed: _startTest,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6CB9B7),
+          backgroundColor: const Color.fromARGB(255, 25, 118, 210),
           foregroundColor: Colors.white,
           padding: buttonPadding,
         ),
@@ -153,41 +142,53 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
       );
     }
 
-    // Cuando hay resultado se muestran dos botones
     final riskLevel = _armRiskLevel!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ElevatedButton(
-          onPressed: _proceedToNext,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: RiskStyles.color(riskLevel),
-            foregroundColor: Colors.white,
-            padding: buttonPadding,
-          ),
-          child: const Text('Continuar'),
-        ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _repeatTest,
-          icon: const Icon(Icons.replay),
-          label: const Text('Repetir'),
-          style: OutlinedButton.styleFrom(
-            padding: buttonPadding,
-            side: const BorderSide(color: Color(0xFF6CB9B7)),
-            foregroundColor: const Color(0xFF6CB9B7),
-          ),
-        ),
-      ],
+    return ElevatedButton(
+      onPressed: _proceedToNext,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: RiskStyles.color(riskLevel),
+        foregroundColor: Colors.white,
+        padding: buttonPadding,
+      ),
+      child: const Text('Continuar'),
     );
   }
 
+
+////////////////////////////////////////////////////////////////////////////
+/////////-----------------PESTAÑA PRUEBA 2--------------------/////////////
+//////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 243, 247, 250), //color de fondo de la pestaña
       appBar: AppBar(
-        title: const Text('FAST - Brazos'),
+        backgroundColor: const Color.fromARGB(255, 243, 247, 250),//color de fondo de la barra
+         // Reemplazamos la flecha automática por una personalizada
+        leading: Center(
+          child: Container(
+          // Ajustamos el tamaño del círculo blanco
+            width: 80,
+            height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white, // Fondo blanco para que resalte
+                shape: BoxShape.circle, // Forma circular
+              ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.arrow_back, color: Colors.black, size: 40),
+              onPressed: () {
+                Navigator.pop(context); // Acción para volver a la pantalla anterior
+              },
+            ),
+          ),
+        ),
+        title: const Text('Paso 2: Brazos',
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ), //titulo de arriba de la pantalla
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -195,33 +196,28 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              const Text(
-                'Paso 2: Brazos',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 15),
               Image.asset(
-                'assets/images/fast_sintomas/arm_weakness.png',
-                height: 180,
+                'assets/images/fast_sintomas/arms_weakness.png',
+                height: 360,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 15),
+              // Mostrar instrucciones solamente antes de obtener el resultado
+              if (_armRiskLevel == null) //con esto se evita que aparezcan las instrucciones cambiando el estado
               const Text(
                 'Instrucciones:',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
+              // Mostrar instrucciones solamente antes de obtener el resultado
+              if (_armRiskLevel == null) //con esto se evita que aparezcan las instrucciones cambiando el estado
               const Text(
                 'Pídele que levante ambos brazos al frente y los mantenga arriba mientras contamos 10 segundos.',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 20),
               ),
               const SizedBox(height: 16),
               _buildActionPanel(),
@@ -235,3 +231,6 @@ class _ArmsStepPageState extends ConsumerState<ArmsStepPage> {
     );
   }
 }
+////////////////////////////////////////////////////////////////////////////
+/////////-----------------PESTAÑA PRUEBA 2--------------------/////////////
+//////////////////////////////////////////////////////////////////////////

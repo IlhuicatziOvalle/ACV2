@@ -86,7 +86,7 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
 
     try {
       final analysis = await recordingFuture;
-
+      
       if (mounted) {
         setState(() {
           _result = analysis.level;
@@ -110,21 +110,6 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
         });
       }
     }
-  }
-
-  /// Reinicia el estado y vuelve a lanzar el análisis desde cero.
-  void _repeatTest() {
-    _timer?.cancel();
-    TtsService.instance.stop();
-    setState(() {
-      _result = null;
-      _transcript = null;
-      _similarity = null;
-      _remainingSeconds = FastConstants.speechSeconds;
-      _isRecording = false;
-      _isLoading = false;
-    });
-    _startRecording();
   }
 
   void _proceedToDecision() {
@@ -172,15 +157,14 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
           const SizedBox(height: 12),
           Text(
             'Resultado: ${_result!.label} (${RiskStyles.badge(_speechRiskLevel!)})',
-            style:
-            RiskStyles.highlighted(level: _speechRiskLevel!, fontSize: 20),
+            style: RiskStyles.highlighted(level: _speechRiskLevel!, fontSize: 20),
             textAlign: TextAlign.center,
           ),
           if ((_transcript?.isNotEmpty ?? false) || _similarity != null) ...[
             const SizedBox(height: 12),
             if (_transcript != null && _transcript!.isNotEmpty)
               Text(
-                'Texto detectado: "$_transcript"',
+                'Texto detectado: "${_transcript!}"',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16),
               ),
@@ -222,11 +206,12 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
       );
     }
 
+/////////-----------------BOTON GRABAR PRUEBA--------------------/////////////
     if (_result == null) {
       return ElevatedButton(
         onPressed: _startRecording,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6CB9B7),
+          backgroundColor: const Color.fromARGB(255, 25, 118, 210),
           foregroundColor: Colors.white,
           padding: buttonPadding,
         ),
@@ -235,47 +220,62 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
           children: [
             Icon(Icons.mic),
             SizedBox(width: 8),
-            Text('Grabar'),
+            Text('Grabar',
+            style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ))
           ],
         ),
       );
     }
 
-    // Cuando hay resultado se muestran dos botones
     final riskLevel = _speechRiskLevel!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ElevatedButton(
-          onPressed: _proceedToDecision,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: RiskStyles.color(riskLevel),
-            foregroundColor: Colors.white,
-            padding: buttonPadding,
-          ),
-          child: const Text('Continuar'),
-        ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _repeatTest,
-          icon: const Icon(Icons.replay),
-          label: const Text('Repetir'),
-          style: OutlinedButton.styleFrom(
-            padding: buttonPadding,
-            side: const BorderSide(color: Color(0xFF6CB9B7)),
-            foregroundColor: const Color(0xFF6CB9B7),
-          ),
-        ),
-      ],
+    return ElevatedButton(
+      onPressed: _proceedToDecision,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: RiskStyles.color(riskLevel),
+        foregroundColor: Colors.white,
+        padding: buttonPadding,
+      ),
+      child: const Text('Continuar'),
     );
   }
 
+////////////////////////////////////////////////////////////////////////////
+/////////-----------------PESTAÑA PRUEBA 3--------------------/////////////
+//////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 243, 247, 250), //color de fondo de la pestaña
       appBar: AppBar(
-        title: const Text('FAST - Habla'),
+        backgroundColor: const Color.fromARGB(255, 243, 247, 250),//color de fondo de la barra
+         // Reemplazamos la flecha automática por una personalizada
+        leading: Center(
+          child: Container(
+          // Ajustamos el tamaño del círculo blanco
+            width: 80,
+            height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white, // Fondo blanco para que resalte
+                shape: BoxShape.circle, // Forma circular
+              ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.arrow_back, color: Colors.black, size: 40),
+              onPressed: () {
+                Navigator.pop(context); // Acción para volver a la pantalla anterior
+              },
+            ),
+          ),
+        ),
+        title: const Text('Paso 3 - Habla',
+         style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ), //titulo de arriba de la pantalla
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -283,22 +283,15 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              const Text(
-                'Paso 3: Habla',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 15),
               Image.asset(
                 'assets/images/fast_sintomas/speech_difficulty.png',
-                height: 180,
+                height: 360,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 15),
+              // Mostrar instrucciones solamente antes de obtener el resultado
+              if (_result == null) //con esto se evita que aparezcan las instrucciones cambiando el estado
               const Text(
                 'Frase a repetir:',
                 style: TextStyle(
@@ -306,7 +299,10 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              
               const SizedBox(height: 16),
+               // Mostrar instrucciones solamente antes de obtener el resultado
+              if (_result == null) //con esto se evita que aparezcan las instrucciones cambiando el estado
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -326,6 +322,7 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
               const SizedBox(height: 16),
               _buildActionPanel(),
               const SizedBox(height: 24),
+              
             ],
           ),
         ),
@@ -335,3 +332,6 @@ class _SpeechStepPageState extends ConsumerState<SpeechStepPage> {
     );
   }
 }
+////////////////////////////////////////////////////////////////////////////
+/////////-----------------PESTAÑA PRUEBA 3--------------------/////////////
+//////////////////////////////////////////////////////////////////////////

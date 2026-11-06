@@ -156,6 +156,10 @@ Definida en `lib/core/constants/risk_levels.dart`:
 | **Llamadas/SMS** | url_launcher, canales nativos |
 | **TTS** | flutter_tts |
 
+La [documentación técnica](docs/README.md) ofrece rutas separadas para consultar
+versiones, preparar el entorno, entender las herramientas o revisar el historial
+de configuración.
+
 ### Estructura del proyecto
 
 ```text
@@ -187,17 +191,21 @@ lib/
 
 ### Requisitos generales
 
-- Flutter SDK **3.9.2+**
-- Android Studio o Xcode configurados
-- Java/Kotlin para desarrollo Android nativo
-- CocoaPods y Xcode para iOS
+- Flutter SDK **3.47.5** con Dart **3.13.4**
+- JDK **17**
+- Android SDK 36, Build Tools 36.0.0 y NDK 28.2.13676358
+- Xcode 26.x, iOS SDK 26+ y CocoaPods 1.17.0 para iOS
+
+Consulta la [preparación del entorno](docs/preparacion_del_entorno.md) antes de
+instalar o actualizar herramientas.
 
 ### Clonar y preparar el proyecto
 
 ```bash
 git clone https://github.com/AlertaACV/alerta_acv.git
 cd alerta_acv
-flutter pub get
+fvm install       # Si utilizas FVM
+flutter pub get   # O: fvm flutter pub get
 ```
 
 ### Modelos necesarios (Android)
